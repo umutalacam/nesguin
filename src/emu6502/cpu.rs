@@ -1,3 +1,5 @@
+use std::u8;
+
 use crate::emu6502::ram::RAM;
 
 #[derive(Debug)]
@@ -115,10 +117,13 @@ impl CPU {
             
             0xAA => self.op_tax(),
             0xE8 => self.op_inx(),
-            
 
             // Stack instructions
             0x9A => self.op_txs(),
+            0xBA => self.op_tsx(),
+            0x48 => self.op_pha(),
+            0x68 => self.op_pla(),
+
 
 
             _ => {
@@ -195,6 +200,14 @@ impl CPU {
         }
     }
 
+    /**
+     * Returns the actual memory address of an index on CPU stack.
+     */
+    pub fn resolve_stack_addr(&mut self, index: u8) -> u16 {
+        let stack_base:u16 = 0x0100;
+        return stack_base + index as u16;
+    }
+
     pub fn set_cpu_flag(&mut self, flag: CPUFlag, val: bool) {
         // Map flag bits
         let mask:u8 = match flag {
@@ -246,14 +259,14 @@ impl CPU {
         let val_a = self.register_a;
         self.register_x = val_a;
         self.update_zn_flags(val_a);
-        println!("TAX")
+        println!("tax")
     }
 
     fn op_inx(&mut self) {
         // increment register a
         self.register_x += 1;
         self.update_zn_flags(self.register_x);
-        println!("INX")
+        println!("inx")
     }
 
     fn op_txs(&mut self) {
@@ -276,11 +289,13 @@ impl CPU {
     }
 
     fn op_pla(&mut self) {
-        // pull from stack to a
+        // Pull from stack to resiter a
         let addr = 0x0100 + self.stack_pointer as u16;
         let value = self.memory.read_byte(addr);
         self.register_a = value;
         self.stack_pointer += 1;
+        // set flags
+        self.update_zn_flags(value);
         println!("pla");
     }
 
