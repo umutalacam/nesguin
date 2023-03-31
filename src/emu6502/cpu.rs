@@ -208,6 +208,27 @@ impl CPU {
         return stack_base + index as u16;
     }
 
+    /**
+     *  Pushes a byte to the stack and decrements the stack pointer
+     */
+    fn stack_push_byte(&mut self, data:u8) {
+        let addr = self.resolve_stack_addr(self.stack_pointer);
+        self.memory.write_byte(addr, data);
+        self.stack_pointer = self.stack_pointer.wrapping_sub(1)
+    }
+
+    /**
+     *  Pops a byte from the stack and increments stack pointer
+     */
+    fn stack_pop_byte(&mut self) -> u8{
+        self.stack_pointer = self.stack_pointer.wrapping_add(1);
+        let addr = self.resolve_stack_addr(self.stack_pointer);
+        return self.memory.read_byte(addr);
+    }
+
+    /**
+     *  Sets particular CPU flag
+     */
     pub fn set_cpu_flag(&mut self, flag: CPUFlag, val: bool) {
         // Map flag bits
         let mask:u8 = match flag {
@@ -282,18 +303,16 @@ impl CPU {
 
     fn op_pha(&mut self) {
         // push a to stack
-        let addr = 0x0100 + self.stack_pointer as u16;
-        self.memory.write_byte(addr, self.register_a);
-        self.stack_pointer -= 1;
+        self.stack_push_byte(self.register_a);
+        // set flags
+        self.update_zn_flags(self.register_a);
         println!("pha");
     }
 
     fn op_pla(&mut self) {
         // Pull from stack to resiter a
-        let addr = 0x0100 + self.stack_pointer as u16;
-        let value = self.memory.read_byte(addr);
+        let value = self.stack_pop_byte();
         self.register_a = value;
-        self.stack_pointer += 1;
         // set flags
         self.update_zn_flags(value);
         println!("pla");
