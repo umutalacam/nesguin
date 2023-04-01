@@ -114,7 +114,6 @@ impl CPU {
             0x81 => self.op_sta(&AddressingMode::Indirect_X),
             0x91 => self.op_sta(&AddressingMode::Indirect_Y),
             
-            
             0xAA => self.op_tax(),
             0xE8 => self.op_inx(),
 
@@ -122,7 +121,10 @@ impl CPU {
             0x9A => self.op_txs(),
             0xBA => self.op_tsx(),
             0x48 => self.op_pha(),
+            0x08 => self.op_php(),
             0x68 => self.op_pla(),
+            0x28 => self.op_plp(),
+
 
 
 
@@ -267,7 +269,7 @@ impl CPU {
         self.register_a = value;
         // Update flags
         self.update_zn_flags(value);
-        print!("lda")
+        println!("lda")
     }
 
     fn op_sta(&mut self, mode: & AddressingMode) {
@@ -317,6 +319,23 @@ impl CPU {
         self.update_zn_flags(value);
         println!("pla");
     }
+    
+    // Pushes a copy of the status flags on to the stack.
+    fn op_php(&mut self) {
+        let status_flag = self.status;
+        self.stack_push_byte(status_flag);
+        println!("php");
+    }
+
+    // Pulls an 8 bit value from the stack and into the processor flags.
+    fn op_plp(&mut self) {
+        let status = self.stack_pop_byte();
+        self.status = status;
+        println!("plp");
+    }
+
+
+
 
 
 }

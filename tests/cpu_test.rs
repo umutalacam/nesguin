@@ -113,4 +113,14 @@ fn test_op_pla() {
 
 }
 
+#[test]
+fn test_op_php() {
+    // LDA $21, PHA, PHP
+    let program = vec![0xa9, 0x21, 0x48, 0x28];
+    // create cpu
+    let mut cpu = load_test_program_to_cpu(program);
+    cpu.run();
+    assert_eq!(cpu.status, 0x21);
+}
+
 
