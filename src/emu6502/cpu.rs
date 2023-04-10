@@ -1,20 +1,9 @@
 use std::u8;
 
 use crate::emu6502::ram::RAM;
-
-#[derive(Debug)]
-#[allow(non_camel_case_types)]
-enum AddressingMode {
-    Immediate,
-    ZeroPage,
-    ZeroPage_X,
-    ZeroPage_Y,
-    Absolute,
-    Absolute_X,
-    Absolute_Y,
-    Indirect_X,
-    Indirect_Y
-}
+use crate::emu6502::op_codes::OpCode;
+use crate::emu6502::op_codes::OpCodeMap;
+use crate::emu6502::op_codes::AddressingMode;
 
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
@@ -37,11 +26,15 @@ pub struct CPU {
     pub program_counter:u16,
     pub stack_pointer:u8,
     pub status:u8,
-    pub memory:RAM
+    pub memory:RAM,
+    pub op_codes:OpCodeMap
 }
 
-/* Basic CPU implementations */
+/* Core CPU functionality */
 impl CPU {
+    /**
+     * CPU constructor, create a new CPU object
+     */
     pub fn new() -> Self {
         CPU {
             register_a: 0,
@@ -50,10 +43,14 @@ impl CPU {
             program_counter: 0,
             stack_pointer: 0,
             status:0, 
-            memory: RAM::new()
+            memory: RAM::new(),
+            op_codes: OpCodeMap::new()
         }
     }
 
+    /**
+     * Resets CPU to initial state
+     */
     pub fn reset(&mut self) {
         self.register_a = 0;
         self.register_x = 0;
@@ -72,26 +69,47 @@ impl CPU {
         self.memory.write_word(0xFFFC, 0x8000)
     }
 
+    /**
+     * Start execution of the program in the memory. 
+     * Emulates fetch decode execute cycle.
+     */
     pub fn run(&mut self) {
-        println!("---\nExecution Start\n---");
-        
+        println!("Execution started.");
+        // Fetch Decode Execution cycle
         loop {
             if self.program_counter >= 0xFFFF {
                 break;
             }
+            // Fetch
             let instruction = self.fetch_instruction();
             self.program_counter += 1;
-            self.decode_instruction(instruction);
+            // Decode
+            let op_code = self.decode_instruction(instruction);
+            // Execute 
+            // TODO: Cycles from opcode
+            self.execute_instruction(instruction);
         }
-
         println!("Execution completed.");
     }
 
+    /**
+     * Fetch next instruction from memory using program counter.
+     */
     fn fetch_instruction(&mut self) -> u8 {
         self.memory.read_byte(self.program_counter)
     }
+
+    /**
+     * Decode instruction and get OpCode details.
+     */
+    fn decode_instruction(&mut self, instruction: u8) -> &OpCode {
+        self.op_codes.get_op_code(&instruction)
+    }
     
-    fn decode_instruction(&mut self, instruction: u8) {
+    /**
+     * Execute the instruction logic
+     */
+    fn execute_instruction(&mut self, instruction: u8) {
         // decode
         match instruction {
             0x00 => self.op_nop(),
@@ -124,9 +142,6 @@ impl CPU {
             0x08 => self.op_php(),
             0x68 => self.op_pla(),
             0x28 => self.op_plp(),
-
-
-
 
             _ => {
                 println!("Reaching address {} and no instruction exists: {}", self.program_counter, instruction);
@@ -191,13 +206,16 @@ impl CPU {
             },
             AddressingMode::Indirect_Y => {
                 let base = self.memory.read_byte(self.program_counter);
-    
                 let lo = self.memory.read_byte(base as u16);
                 let hi = self.memory.read_byte((base as u8).wrapping_add(1) as u16);
                 let deref_base = (hi as u16) << 8 | (lo as u16);
                 let deref = deref_base.wrapping_add(self.register_y as u16);
                 self.program_counter += 1;
                 deref
+            },
+            AddressingMode::NoneAddressing => {
+                // No parameter is used for these kind of instructions, pass program counter.
+                return self.program_counter;
             }
         }
     }
