@@ -132,12 +132,16 @@ impl CPU {
             0x81 => self.op_sta(&AddressingMode::Indirect_X),
             0x91 => self.op_sta(&AddressingMode::Indirect_Y),
             
-            0xAA => self.op_tax(),
+            // Implicit instructions
             0xE8 => self.op_inx(),
-
-            // Stack instructions
+            0xAA => self.op_tax(),
+            0x8A => self.op_txa(),
+            0xA8 => self.op_tay(),
+            0x98 => self.op_tya(),
             0x9A => self.op_txs(),
             0xBA => self.op_tsx(),
+
+            // Stack instructions
             0x48 => self.op_pha(),
             0x08 => self.op_php(),
             0x68 => self.op_pla(),
@@ -321,14 +325,15 @@ impl CPU {
     }
 
     fn op_txs(&mut self) {
-        // Transfer X to Stack ptr
+        // Transfer X to Stack pointer register
         self.stack_pointer = self.register_x;
-        println!("txs");
     }
 
     fn op_tsx(&mut self) {
+        // Copies the current contents of the stack register 
+        // into the X register and sets the zero and negative flags as appropriate.
         self.register_x = self.stack_pointer;
-        println!("tsx");
+        self.update_zn_flags(self.register_x);
     }
 
     fn op_pha(&mut self) {
@@ -344,7 +349,7 @@ impl CPU {
         let value = self.stack_pop_byte();
         self.register_a = value;
         // set flags
-        self.update_zn_flags(value);
+        self.update_zn_flags(self.register_a);
         println!("pla");
     }
     
@@ -360,6 +365,24 @@ impl CPU {
         let status = self.stack_pop_byte();
         self.status = status;
         println!("plp");
+    }
+
+    fn op_txa(&mut self) {
+        // Transfer X to Accumulator
+        self.register_a = self.register_x;
+        self.update_zn_flags(self.register_a);
+    }
+
+    fn op_tay(&mut self) {
+        // Transfer Accumulator to Y
+        self.register_y = self.register_a;
+        self.update_zn_flags(self.register_y);
+    }
+
+    fn op_tya(&mut self) {
+        // Transfer Y to Accumulator
+        self.register_a = self.register_y;
+        self.update_zn_flags(self.register_a);
     }
 
 }

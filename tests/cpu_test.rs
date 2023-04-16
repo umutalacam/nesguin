@@ -123,4 +123,40 @@ fn test_op_php() {
     assert_eq!(cpu.status, 0x21);
 }
 
+#[test]
+fn test_op_txa() {
+    // TXA
+    let program = vec![0x8A];
+    // create cpu
+    let mut cpu = load_test_program_to_cpu(program);
+    cpu.register_a = 17;
+    cpu.register_x = 88;
+    cpu.run();
+    assert_eq!(cpu.register_a, 88);
+}
 
+#[test]
+fn test_op_tay() {
+    // TXA
+    let program = vec![0xA8];
+    // create cpu
+    let mut cpu = load_test_program_to_cpu(program);
+    cpu.register_a = 17;
+    cpu.register_y = 88;
+    cpu.run();
+    assert_eq!(cpu.register_a, 17);
+    assert_eq!(cpu.register_y, 17);
+}
+
+#[test]
+fn test_op_tya() {
+    // TXA
+    let program = vec![0x98];
+    // create cpu
+    let mut cpu = load_test_program_to_cpu(program);
+    cpu.register_a = 17;
+    cpu.register_y = 88;
+    cpu.run();
+    assert_eq!(cpu.register_a, 88);
+    assert_eq!(cpu.register_y, 88);
+}
