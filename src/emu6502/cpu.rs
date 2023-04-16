@@ -152,10 +152,13 @@ impl CPU {
 
 }
 
-// OpCodes implementation
+// Helper methods for CPU operations
 impl CPU {
 
-    fn resolve_addr(&mut self, mode: & AddressingMode) -> u16 {
+    /**
+     * Resolves the memory location of the operand by using the addressing mode.
+     */
+    fn resolve_operand_addr(&mut self, mode: & AddressingMode) -> u16 {
         match mode {
             AddressingMode::Immediate => {
                 let addr = self.program_counter;
@@ -272,16 +275,23 @@ impl CPU {
         }
     }
 
+    /**
+     * Update zero and negative flags regarding to the arithmetic result.
+     */
     fn update_zn_flags(&mut self, result: u8) {
         let val = result == 0;
         self.set_cpu_flag(CPUFlag::Zero, val);
         self.set_cpu_flag(CPUFlag::Negative, result & 0b1000_0000 != 0);
     }
 
+}
+
+// OpCodes implementations
+impl CPU {
     fn op_nop(&mut self) {}
 
     fn op_lda(&mut self, mode: & AddressingMode) {
-        let addr = self.resolve_addr(mode);
+        let addr = self.resolve_operand_addr(mode);
         let value = self.memory.read_byte(addr);
         // Update register
         self.register_a = value;
@@ -291,7 +301,7 @@ impl CPU {
     }
 
     fn op_sta(&mut self, mode: & AddressingMode) {
-        let addr = self.resolve_addr(mode);
+        let addr = self.resolve_operand_addr(mode);
         self.memory.write_byte(addr, self.register_a);
     }
 
@@ -338,23 +348,19 @@ impl CPU {
         println!("pla");
     }
     
-    // Pushes a copy of the status flags on to the stack.
     fn op_php(&mut self) {
+        // Pushes a copy of the status flags on to the stack.
         let status_flag = self.status;
         self.stack_push_byte(status_flag);
         println!("php");
     }
 
-    // Pulls an 8 bit value from the stack and into the processor flags.
     fn op_plp(&mut self) {
+        // Pulls an 8 bit value from the stack and into the processor flags.
         let status = self.stack_pop_byte();
         self.status = status;
         println!("plp");
     }
-
-
-
-
 
 }
 
